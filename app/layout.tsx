@@ -3,6 +3,19 @@ import "./globals.css";
 export const metadata = {
   title: "Roast My Repo",
   description: "Paste a repo. Get graded. Try not to cry.",
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+export const metadata: Metadata = {
+  title: "Roast My Repo",
+  description: "Paste a repo. Get roasted. Maybe learn something.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
