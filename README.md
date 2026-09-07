@@ -1,31 +1,39 @@
 # Roast My Repo
 
-The landing page for **Roast My Repo** — a Next.js app introducing the
-project and collecting early interest before the full product ships.
+Paste a public GitHub repo, get an honest, witty, constructive AI-generated
+code roast — a grade, a headline, and per-file comments.
 
 ## Getting Started
 
-Run the development server:
-
 ```bash
+npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to view the landing page.
+Open [http://localhost:3000](http://localhost:3000).
+
+You'll need a `GEMINI_API_KEY` environment variable set for `/api/roast` to
+generate real roasts (see `lib/gemini.ts`).
 
 ## Project Structure
 
-- `app/page.tsx` — the landing page
-- `app/layout.tsx` — root layout and metadata
-- `app/globals.css` — Tailwind CSS setup
+- `app/page.tsx` — homepage (state/data-fetching) composed from `components/roast/*`
+- `app/api/roast/route.ts` — validates the repo URL, fetches GitHub metadata, runs analysis, and generates the roast
+- `lib/github.ts` — GitHub URL validation and repo metadata fetching
+- `lib/gemini.ts` — roast generation via the Gemini API
+- `lib/schema.ts` — shared types for analysis/roast data
+- `components/ui/*` — shadcn/ui primitives
+- `components/roast/*` — app-specific presentational components (Navbar, Hero, RepoInput, ResultCard, etc.)
 
 ## Stack
 
 - [Next.js](https://nextjs.org) (App Router)
-- [Tailwind CSS](https://tailwindcss.com)
+- [Tailwind CSS](https://tailwindcss.com) + [shadcn/ui](https://ui.shadcn.com)
 - TypeScript
+- [Gemini API](https://ai.google.dev/) for roast generation
 
-## Status
+## Testing
 
-This repo currently contains the marketing/landing page only. The core
-application is not yet included here.
+```bash
+npm test
+```
