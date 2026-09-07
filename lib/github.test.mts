@@ -125,8 +125,9 @@ test("valid public repo -> normalised metadata", async () => {
     sizeKb: 1200,
     isPrivate: false,
     htmlUrl: "https://github.com/octocat/hub",
+    headCommitSha: "abc123",
   });
-  // Hit the repo endpoint, then the commits (empty-repo) check.
+  // Hit the repo endpoint, then the commits (empty-repo + head-SHA) check.
   assert.equal(calls.length, 2);
   assert.match(calls[1], /\/commits/);
 });
@@ -263,4 +264,23 @@ test("network failure -> GitHubError(503), not a raw throw", async () => {
     fetchRepoMetadata("octocat/hub"),
     (err: unknown) => err instanceof GitHubError && err.status === 503
   );
+});
+
+test("head-commit lookup fails soft -> headCommitSha is null, no throw", async () => {
+  stubFetch((url) => {
+    if (url.includes("/commits")) {
+      return jsonResponse({ message: "kaboom" }, { status: 500 });
+    }
+    return jsonResponse({
+      name: "hub",
+      owner: { login: "octocat" },
+      private: false,
+      size: 10,
+      default_branch: "main",
+      html_url: "https://github.com/octocat/hub",
+    });
+  });
+
+  const meta = await fetchRepoMetadata("octocat/hub");
+  assert.equal(meta.headCommitSha, null);
 });

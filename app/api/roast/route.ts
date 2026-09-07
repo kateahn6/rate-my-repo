@@ -1,15 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchRepoMetadata, GitHubError } from "@/lib/github";
+import { analyzeRepo } from "@/lib/analyze";
 import { generateRoast } from "@/lib/gemini";
-import { MOCK_MESSY_REPO } from "@/lib/mock-analysis";
-import { RepoAnalysis } from "@/lib/schema";
 
-// TODO(Person A): replace this with a real call to your analysis service,
-// e.g. `await fetch(`${ANALYSIS_SERVICE_URL}/analyze`, { body: repoUrl })`.
-// Keep the return type as RepoAnalysis so this route doesn't need to change.
-async function runAnalysis(_repoUrl: string): Promise<RepoAnalysis> {
-  return MOCK_MESSY_REPO;
-}
+// The analysis pulls a bounded set of files over the network and then hands
+// them to Gemini, so give the function room beyond Vercel's 10s default.
+export const maxDuration = 30;
 
 // Simple in-memory rate limit by IP. Fine for a demo; swap for
 // Redis/Upstash if this goes anywhere beyond a portfolio project.
@@ -41,7 +37,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const metadata = await fetchRepoMetadata(repoUrl);
-    const analysis = await runAnalysis(metadata.htmlUrl);
+    const analysis = await analyzeRepo(metadata);
     const roast = await generateRoast(analysis);
     return NextResponse.json({ metadata, roast });
   } catch (err) {

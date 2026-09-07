@@ -38,14 +38,24 @@ export function ResultCard({ result }: ResultCardProps) {
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          {result.roast.file_comments.map((c) => (
-            <div key={c.path} className="border-l-2 border-primary pl-3">
-              <code className="font-mono text-xs text-muted-foreground">
-                {c.path}
-              </code>
-              <p className="mt-1 text-accent italic">{c.comment}</p>
-            </div>
-          ))}
+          {result.roast.file_comments.length === 0 ? (
+            <p className="text-sm text-muted-foreground italic">
+              No file-by-file notes on this one — nothing stood out enough to
+              call out by name.
+            </p>
+          ) : (
+            result.roast.file_comments.map((c, i) => (
+              <div
+                key={`${c.path}-${i}`}
+                className="border-l-2 border-primary pl-3"
+              >
+                <code className="font-mono text-xs text-muted-foreground">
+                  {c.path}
+                </code>
+                <p className="mt-1 text-accent italic">{c.comment}</p>
+              </div>
+            ))
+          )}
           <p className="font-heading mt-2 text-sm text-muted-foreground">
             {result.roast.closing_note}
           </p>

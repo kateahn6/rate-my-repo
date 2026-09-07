@@ -12,14 +12,16 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-You'll need a `GEMINI_API_KEY` environment variable set for `/api/roast` to
-generate real roasts (see `lib/gemini.ts`).
+Copy `.env.example` to `.env.local` and set `GEMINI_API_KEY` (required by
+`/api/roast`). `GITHUB_TOKEN` is optional but recommended — it lifts the GitHub
+API rate limit from 60 to 5,000 requests/hour.
 
 ## Project Structure
 
 - `app/page.tsx` — homepage (state/data-fetching) composed from `components/roast/*`
 - `app/api/roast/route.ts` — validates the repo URL, fetches GitHub metadata, runs analysis, and generates the roast
-- `lib/github.ts` — GitHub URL validation and repo metadata fetching
+- `lib/github.ts` — GitHub URL validation, repo metadata, file tree, and language stats
+- `lib/analyze.ts` — builds a `RepoAnalysis` from the GitHub API + a light lexical scan of the largest source files (AST-free stand-in until a real static-analysis engine exists)
 - `lib/gemini.ts` — roast generation via the Gemini API
 - `lib/schema.ts` — shared types for analysis/roast data
 - `components/ui/*` — shadcn/ui primitives
