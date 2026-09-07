@@ -1,13 +1,7 @@
+import Link from "next/link";
 import { Flame } from "lucide-react";
-import { GithubMark } from "./github-mark";
 
-const FOOTER_LINKS = [
-  { label: "About", href: "#about" },
-  { label: "How it works", href: "#how-it-works" },
-  { label: "Examples", href: "#try-it" },
-];
-
-const GITHUB_REPO_URL = "https://github.com/kateahn6/rate-my-repo";
+const FOOTER_LINKS = [{ label: "How it works", href: "/how-it-works" }];
 
 export function Footer() {
   return (
@@ -25,23 +19,14 @@ export function Footer() {
 
         <nav aria-label="Footer" className="flex items-center gap-6">
           {FOOTER_LINKS.map((link) => (
-            <a
+            <Link
               key={link.href}
               href={link.href}
               className="text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
               {link.label}
-            </a>
+            </Link>
           ))}
-          <a
-            href={GITHUB_REPO_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="View source on GitHub"
-            className="text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <GithubMark className="size-5" />
-          </a>
         </nav>
       </div>
     </footer>

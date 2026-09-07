@@ -23,7 +23,7 @@ const FEATURES = [
 
 export function FeatureSection() {
   return (
-    <section id="how-it-works" className="mx-auto w-full max-w-6xl px-6 py-16 sm:py-24">
+    <section className="mx-auto w-full max-w-6xl px-6 py-16 sm:py-24">
       <div className="grid gap-6 sm:grid-cols-3">
         {FEATURES.map((feature) => (
           <FeatureCard key={feature.title} {...feature} />
