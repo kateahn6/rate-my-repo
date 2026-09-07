@@ -1,12 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Navbar } from "@/components/roast/navbar";
 import { Hero } from "@/components/roast/hero";
 import { ResultCard, type RoastResponse } from "@/components/roast/result-card";
 import { FeatureSection } from "@/components/roast/feature-section";
 import { QuoteSection } from "@/components/roast/quote-section";
-import { Footer } from "@/components/roast/footer";
 
 export default function Home() {
   const [repoUrl, setRepoUrl] = useState("");
@@ -37,21 +35,17 @@ export default function Home() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <Navbar />
-      <main className="flex-1">
-        <Hero
-          repoUrl={repoUrl}
-          onRepoUrlChange={setRepoUrl}
-          onSubmit={handleSubmit}
-          loading={loading}
-          error={error}
-        />
-        {result && <ResultCard result={result} />}
-        <FeatureSection />
-        <QuoteSection />
-      </main>
-      <Footer />
-    </div>
+    <>
+      <Hero
+        repoUrl={repoUrl}
+        onRepoUrlChange={setRepoUrl}
+        onSubmit={handleSubmit}
+        loading={loading}
+        error={error}
+      />
+      {result && <ResultCard result={result} />}
+      <FeatureSection />
+      <QuoteSection />
+    </>
   );
 }
