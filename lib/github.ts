@@ -9,6 +9,18 @@ export interface RepoMetadata {
   sizeKb: number;
   isPrivate: boolean;
   htmlUrl: string;
+  // SHA of the latest commit on the default branch, or null if the secondary
+  // lookup failed softly. The analysis pins itself to this so a branch moving
+  // mid-request can't hand back a mismatched file tree.
+  headCommitSha: string | null;
+}
+
+// One entry from the Git "tree" (recursive file listing) endpoint.
+export interface RepoTreeEntry {
+  path: string;
+  type: "blob" | "tree";
+  // Size in bytes. 0 for directories, and occasionally absent on blobs.
+  size: number;
 }
 
 // Plain field + assignment instead of a `public status` constructor parameter
@@ -143,12 +155,16 @@ function assertNotRateLimited(res: Response): void {
   );
 }
 
-// A repo with zero commits clones to an empty tree — analysing it is pure waste.
-// GitHub returns 409 ("Git Repository is empty.") from the commits endpoint for
-// this case; an empty array is the belt-and-braces fallback. Any other failure
-// here is non-fatal: the metadata call already succeeded, so fail open rather
-// than block the pipeline on a flaky secondary request.
-async function assertRepoHasCommits(owner: string, name: string): Promise<void> {
+// Doubles as the empty-repo guard and the head-SHA lookup. A repo with zero
+// commits clones to an empty tree — analysing it is pure waste — and GitHub
+// returns 409 ("Git Repository is empty.") from the commits endpoint for that
+// case; an empty array is the belt-and-braces fallback. Any *other* failure
+// here is non-fatal: the metadata call already succeeded, so fall open with a
+// null SHA rather than block the pipeline on a flaky secondary request.
+async function fetchHeadCommitSha(
+  owner: string,
+  name: string
+): Promise<string | null> {
   const res = await githubFetch(
     `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/commits?per_page=1`
   );
@@ -157,17 +173,22 @@ async function assertRepoHasCommits(owner: string, name: string): Promise<void> 
   if (res.status === 409) {
     throw new GitHubError("This repo has no commits yet — nothing to roast.");
   }
-  if (!res.ok) return;
+  if (!res.ok) return null;
 
   let commits: unknown;
   try {
     commits = await res.json();
   } catch {
-    return;
+    return null;
   }
   if (Array.isArray(commits) && commits.length === 0) {
     throw new GitHubError("This repo has no commits yet — nothing to roast.");
   }
+  const sha =
+    Array.isArray(commits) && commits[0] && typeof commits[0] === "object"
+      ? (commits[0] as { sha?: unknown }).sha
+      : undefined;
+  return typeof sha === "string" ? sha : null;
 }
 
 export async function fetchRepoMetadata(
@@ -239,7 +260,7 @@ export async function fetchRepoMetadata(
   const canonicalOwner = data.owner?.login ?? owner;
   const canonicalName = data.name ?? name;
 
-  await assertRepoHasCommits(canonicalOwner, canonicalName);
+  const headCommitSha = await fetchHeadCommitSha(canonicalOwner, canonicalName);
 
   return {
     owner: canonicalOwner,
@@ -248,5 +269,76 @@ export async function fetchRepoMetadata(
     sizeKb,
     isPrivate: Boolean(data.private),
     htmlUrl: data.html_url ?? `https://github.com/${canonicalOwner}/${canonicalName}`,
+    headCommitSha,
   };
+}
+
+// The Git "tree" endpoint returns a repo's entire file listing for one ref in a
+// single request (recursive=1) — far cheaper than walking the contents API
+// directory by directory. GitHub truncates the response for very large trees;
+// when that happens we analyse what we got and flag it upstream.
+export async function fetchRepoTree(
+  owner: string,
+  name: string,
+  ref: string
+): Promise<{ entries: RepoTreeEntry[]; truncated: boolean }> {
+  const res = await githubFetch(
+    `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/git/trees/${encodeURIComponent(
+      ref
+    )}?recursive=1`
+  );
+  assertNotRateLimited(res);
+  if (!res.ok) return { entries: [], truncated: false };
+
+  let data: { tree?: unknown; truncated?: unknown };
+  try {
+    data = await res.json();
+  } catch {
+    return { entries: [], truncated: false };
+  }
+
+  const raw = Array.isArray(data.tree) ? data.tree : [];
+  const entries: RepoTreeEntry[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const { path, type, size } = item as Record<string, unknown>;
+    if (typeof path !== "string") continue;
+    if (type !== "blob" && type !== "tree") continue;
+    entries.push({ path, type, size: typeof size === "number" ? size : 0 });
+  }
+  return { entries, truncated: Boolean(data.truncated) };
+}
+
+// Byte counts per language, normalised to fractions of the total. Non-fatal: an
+// empty map just means the roast skips the language commentary.
+export async function fetchLanguages(
+  owner: string,
+  name: string
+): Promise<Record<string, number>> {
+  const res = await githubFetch(
+    `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/languages`
+  );
+  assertNotRateLimited(res);
+  if (!res.ok) return {};
+
+  let data: unknown;
+  try {
+    data = await res.json();
+  } catch {
+    return {};
+  }
+  if (!data || typeof data !== "object") return {};
+
+  const counts = Object.entries(data as Record<string, unknown>).filter(
+    (entry): entry is [string, number] =>
+      typeof entry[1] === "number" && entry[1] > 0
+  );
+  const total = counts.reduce((sum, [, n]) => sum + n, 0);
+  if (total === 0) return {};
+
+  const breakdown: Record<string, number> = {};
+  for (const [lang, n] of counts) {
+    breakdown[lang.toLowerCase()] = Math.round((n / total) * 1000) / 1000;
+  }
+  return breakdown;
 }

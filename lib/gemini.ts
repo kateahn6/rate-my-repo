@@ -33,6 +33,9 @@ ${JSON.stringify(analysis, null, 2)}
 Write the roast now, following the schema exactly.`;
 }
 
+const REQUEST_TIMEOUT_MS = 25_000;
+const MAX_ATTEMPTS = 2;
+
 export async function generateRoast(analysis: RepoAnalysis): Promise<RoastResult> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
@@ -40,17 +43,65 @@ export async function generateRoast(analysis: RepoAnalysis): Promise<RoastResult
   }
 
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({
-    model: "gemini-2.5-flash",
-    systemInstruction: SYSTEM_INSTRUCTIONS,
-  });
+  const model = genAI.getGenerativeModel(
+    {
+      model: "gemini-2.5-flash",
+      systemInstruction: SYSTEM_INSTRUCTIONS,
+      // Ask for JSON directly so the model doesn't wrap it in prose or fences.
+      generationConfig: { responseMimeType: "application/json", temperature: 1 },
+    },
+    { timeout: REQUEST_TIMEOUT_MS }
+  );
 
-  const result = await model.generateContent(buildPrompt(analysis));
-  const text = result.response.text().trim();
+  const prompt = buildPrompt(analysis);
+  let lastErr: unknown;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      const result = await model.generateContent(prompt);
+      return parseRoast(result.response.text());
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  throw lastErr instanceof Error
+    ? lastErr
+    : new Error("Gemini roast generation failed.");
+}
 
+function parseRoast(raw: string): RoastResult {
+  // Strip a leftover ```json … ``` fence if the model adds one anyway.
+  const text = raw
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+
+  let parsed: unknown;
   try {
-    return JSON.parse(text) as RoastResult;
+    parsed = JSON.parse(text);
   } catch {
     throw new Error(`Gemini returned non-JSON output: ${text.slice(0, 200)}`);
   }
+  if (!isRoastResult(parsed)) {
+    throw new Error("Gemini output did not match the roast schema.");
+  }
+  return parsed;
+}
+
+function isRoastResult(value: unknown): value is RoastResult {
+  if (!value || typeof value !== "object") return false;
+  const r = value as Record<string, unknown>;
+  return (
+    typeof r.grade === "string" &&
+    typeof r.headline === "string" &&
+    typeof r.closing_note === "string" &&
+    Array.isArray(r.file_comments) &&
+    r.file_comments.every(
+      (c) =>
+        !!c &&
+        typeof c === "object" &&
+        typeof (c as Record<string, unknown>).path === "string" &&
+        typeof (c as Record<string, unknown>).comment === "string"
+    )
+  );
 }
