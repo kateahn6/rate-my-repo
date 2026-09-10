@@ -3,6 +3,8 @@
 Paste a public GitHub repo, get an honest, witty, constructive AI-generated
 code roast — a grade, a headline, and per-file comments.
 
+**Live:** [rate-my-repo.vercel.app](https://rate-my-repo.vercel.app/)
+
 ## Getting Started
 
 ```bash
@@ -10,6 +12,8 @@ npm install
 npm run dev
 ```
 
+You'll need a `GEMINI_API_KEY` environment variable set for `/api/roast` to
+generate real roasts (see `lib/gemini.ts`).
 Open [http://localhost:3000](http://localhost:3000).
 
 Copy `.env.example` to `.env.local` and set `GEMINI_API_KEY` (required by
