@@ -13,6 +13,15 @@ export interface RepoMetadata {
   // lookup failed softly. The analysis pins itself to this so a branch moving
   // mid-request can't hand back a mismatched file tree.
   headCommitSha: string | null;
+  forks_count: number;
+  subscribers_count: number;
+  open_issues_count: number;
+  description: string | null;
+  language: string | null;
+  license: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+
 }
 
 // One entry from the Git "tree" (recursive file listing) endpoint.
@@ -228,6 +237,15 @@ export async function fetchRepoMetadata(
     html_url?: string;
     name?: string;
     owner?: { login?: string };
+    forks_count?: number;
+    subscribers_count?: number;
+    open_issues_count?: number;
+    description?: string | null;
+    language?: string | null;
+    license?: { spdx_id?: string | null } | null;
+    created_at?: string;
+    updated_at?: string;
+
   };
   try {
     data = await res.json();
@@ -270,6 +288,16 @@ export async function fetchRepoMetadata(
     isPrivate: Boolean(data.private),
     htmlUrl: data.html_url ?? `https://github.com/${canonicalOwner}/${canonicalName}`,
     headCommitSha,
+    forks_count: data.forks_count ?? 0,
+    subscribers_count: data.subscribers_count ?? 0,
+    open_issues_count: data.open_issues_count ?? 0,
+    description: data.description ?? null,
+    language: data.language ?? null,
+    license: data.license?.spdx_id ?? null,
+    created_at: data.created_at ?? null,
+    updated_at: data.updated_at ?? null,
+
+
   };
 }
 

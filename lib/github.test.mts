@@ -113,6 +113,14 @@ test("valid public repo -> normalised metadata", async () => {
       size: 1200,
       default_branch: "main",
       html_url: "https://github.com/octocat/hub",
+      forks_count: 42,
+      subscribers_count: 7,
+      open_issues_count: 3,
+      description: "a repo",
+      language: "Go",
+      license: { spdx_id: "MIT" },
+      created_at: "2020-01-01T00:00:00Z",
+      updated_at: "2021-01-01T00:00:00Z",
     })
   );
 
@@ -126,6 +134,14 @@ test("valid public repo -> normalised metadata", async () => {
     isPrivate: false,
     htmlUrl: "https://github.com/octocat/hub",
     headCommitSha: "abc123",
+    forks_count: 42,
+    subscribers_count: 7,
+    open_issues_count: 3,
+    description: "a repo",
+    language: "Go",
+    license: "MIT",
+    created_at: "2020-01-01T00:00:00Z",
+    updated_at: "2021-01-01T00:00:00Z",
   });
   // Hit the repo endpoint, then the commits (empty-repo + head-SHA) check.
   assert.equal(calls.length, 2);
