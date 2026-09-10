@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { FileFinding, RepoAnalysis, RoastResult } from "./schema";
+import type { FileFinding, RepoAnalysis, RoastResult } from "./schema.ts";
 
 // This is the part worth iterating on the most. The analysis JSON is the
 // hard evidence; your job is to turn it into commentary that's funny AND
@@ -36,7 +36,7 @@ Schema:
 
 const MAX_FILES_IN_PROMPT = 20;
 
-function roastWorthiness(file: FileFinding, godModules: string[]): number {
+export function roastWorthiness(file: FileFinding, godModules: string[]): number {
   const totalIssues = file.functions.reduce((sum, fn) => sum + fn.issues.length, 0);
   const deadCode = file.dead_code_lines.length;
   const unusedImports = file.unused_imports.length;
@@ -45,7 +45,7 @@ function roastWorthiness(file: FileFinding, godModules: string[]): number {
   return totalIssues * 3 + deadCode + unusedImports + godBonus;
 }
 
-function buildPrompt(analysis: RepoAnalysis): string {
+export function buildPrompt(analysis: RepoAnalysis): string {
   const godModules = analysis.dependency_graph.god_modules;
 
   let files = analysis.files;
