@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { fetchRepoMetadata, GitHubError } from "@/lib/github";
 import { analyzeRepo } from "@/lib/analyze";
 import { generateRoast } from "@/lib/gemini";
+import { saveRoast } from "@/lib/roast-store";
 
 // The analysis pulls a bounded set of files over the network and then hands
 // them to Gemini, so give the function room beyond Vercel's 10s default.
@@ -39,7 +40,8 @@ export async function POST(req: NextRequest) {
     const metadata = await fetchRepoMetadata(repoUrl);
     const analysis = await analyzeRepo(metadata);
     const roast = await generateRoast(analysis);
-    return NextResponse.json({ metadata, roast });
+    const id = await saveRoast({ metadata, roast });
+    return NextResponse.json({ id, metadata, roast });
   } catch (err) {
     if (err instanceof GitHubError) {
       return NextResponse.json({ error: err.message }, { status: err.status ?? 400 });
