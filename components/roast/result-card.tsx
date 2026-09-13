@@ -49,7 +49,7 @@ export function ResultCard({ result }: ResultCardProps) {
   return (
     <section className="mx-auto w-full max-w-6xl px-6 pb-8">
       <Card className="relative mx-auto w-full max-w-2xl rounded-2xl border-border shadow-2xl shadow-black/30">
-        <div className="absolute top-6 right-6 flex h-16 w-16 items-center justify-center rounded-full border-4 border-primary font-heading text-2xl font-bold text-primary">
+        <div className="glow-primary absolute top-6 right-6 flex h-16 w-16 items-center justify-center rounded-full bg-primary font-heading text-2xl font-bold text-primary-foreground">
           {result.roast.grade}
         </div>
         <CardHeader>
