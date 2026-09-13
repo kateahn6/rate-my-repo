@@ -1,5 +1,6 @@
 import { RepoInput } from "./repo-input";
 import { ErrorAlert } from "./error-alert";
+import { LoadingMessages } from "./loading-messages";
 
 interface HeroProps {
   repoUrl: string;
@@ -29,6 +30,7 @@ export function Hero({ repoUrl, onRepoUrlChange, onSubmit, loading, error }: Her
             onSubmit={onSubmit}
             loading={loading}
           />
+          {loading && <LoadingMessages />}
           {error && <ErrorAlert message={error} />}
         </div>
       </div>

@@ -13,6 +13,7 @@ export interface RepoMetadata {
   // lookup failed softly. The analysis pins itself to this so a branch moving
   // mid-request can't hand back a mismatched file tree.
   headCommitSha: string | null;
+  stargazers_count: number;
   forks_count: number;
   subscribers_count: number;
   open_issues_count: number;
@@ -237,6 +238,7 @@ export async function fetchRepoMetadata(
     html_url?: string;
     name?: string;
     owner?: { login?: string };
+    stargazers_count?: number;
     forks_count?: number;
     subscribers_count?: number;
     open_issues_count?: number;
@@ -288,6 +290,7 @@ export async function fetchRepoMetadata(
     isPrivate: Boolean(data.private),
     htmlUrl: data.html_url ?? `https://github.com/${canonicalOwner}/${canonicalName}`,
     headCommitSha,
+    stargazers_count: data.stargazers_count ?? 0,
     forks_count: data.forks_count ?? 0,
     subscribers_count: data.subscribers_count ?? 0,
     open_issues_count: data.open_issues_count ?? 0,
