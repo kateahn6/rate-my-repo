@@ -5,8 +5,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { ShareLink } from "@/components/roast/share-link";
 
 export interface RoastResponse {
+  id: string;
   metadata: { owner: string; name: string };
   roast: {
     grade: string;
@@ -61,6 +63,9 @@ export function ResultCard({ result }: ResultCardProps) {
           </p>
         </CardContent>
       </Card>
+      <div className="mt-4 flex justify-center">
+        <ShareLink id={result.id} />
+      </div>
     </section>
   );
 }
